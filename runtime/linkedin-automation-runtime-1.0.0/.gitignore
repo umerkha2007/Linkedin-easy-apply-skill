@@ -1,7 +1,0 @@
-.env
-__pycache__/
-*.log
-data/resume.txt
-data/system_prompt.txt
-applications/
-.playwright-profile/
