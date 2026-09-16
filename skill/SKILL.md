@@ -11,9 +11,6 @@ metadata:
       - name: LINKEDIN_AUTOMATION_RUNTIME_DIR
         required: false
         description: Path to the separately installed linkedin-automation Python runtime (the folder containing cli.py). If unset, checked at the default path below.
-      - name: LINKEDIN_AUTOMATION_RUNTIME_URL
-        required: false
-        description: Direct download URL for the linkedin-automation-runtime-<version>.zip artifact (e.g. a GitHub Release asset URL), set by whoever deployed this skill. Only needed the first time, if the runtime isn't already installed — enables the agent to self-bootstrap it instead of stopping to ask the user. Not a ClawHub-hosted URL; ClawHub only distributes this SKILL.md.
       - name: ANTHROPIC_API_KEY
         required: true
         description: Used by the runtime to answer open-ended Easy Apply questions, grounded in your resume
@@ -43,7 +40,7 @@ metadata:
         description: Full resume text, pasted directly. Falls back to a generic bundled example if unset.
       - name: SYSTEM_PROMPT_TEXT
         required: false
-        description: Full custom system prompt, pasted directly, overriding the bundled template.
+        description: Full custom instructions for the runtime's answer-generation step (how it should phrase Easy Apply answers), pasted directly in place of the default template.
 ---
 
 # LinkedIn Automation: Login + Easy Apply
@@ -69,38 +66,22 @@ tested behavior (dedup rules, retry rules, daily-limit handling, etc.).
 ## Locating the installed runtime
 
 This skill's package (`{baseDir}`) contains no automation code — only this file and
-`{baseDir}/README.md`. The actual automation is a separately distributed Python runtime.
-Locate it in this order:
+`{baseDir}/references/README.md`. The actual automation is a separately distributed Python
+runtime, set up ahead of time by the user via the steps in that reference file. Locate it
+in this order:
 
 1. `$LINKEDIN_AUTOMATION_RUNTIME_DIR`, if set.
 2. The default path: `~/.openclaw/workspace/linkedin-automation-runtime/`.
 
-If a runtime exists at either location (a `cli.py` file present there), use it directly —
-skip the bootstrap step below.
+If a runtime exists at either location (a `cli.py` file present there), use it directly.
 
-### Bootstrapping the runtime (first use only)
+If no runtime is found at either location, **stop and tell the user**. Point them at
+`{baseDir}/references/README.md` for setup, and at `LINKEDIN_AUTOMATION_RUNTIME_DIR` to
+tell this skill where they put it (or leave it at the default path above). Do not
+substitute your own approach for locating, obtaining, or standing up the runtime — this
+skill only ever drives an already-prepared installation.
 
-If no runtime is found and `$LINKEDIN_AUTOMATION_RUNTIME_URL` **is** set, self-install it
-before proceeding — this is a one-time step per machine, safe to repeat if it partially
-failed:
-
-1. Download the zip from `$LINKEDIN_AUTOMATION_RUNTIME_URL` to a temp file.
-2. Extract it into `~/.openclaw/workspace/linkedin-automation-runtime/` (create the parent
-   dir if needed).
-3. Run the installer inside the extracted folder: `install.ps1` (Windows) or `install.sh`
-   (macOS/Linux) — this installs the runtime's Python dependencies and the Playwright
-   Chrome browser the automation drives. This step can take a few minutes; let it finish.
-4. Proceed using this path as `<runtime_dir>` for every command below.
-
-If no runtime is found and `$LINKEDIN_AUTOMATION_RUNTIME_URL` is **not** set, **stop and
-tell the user** — do not guess a download location, do not attempt to install anything
-without a source, and do not recreate the automation's behavior yourself. Tell them to
-either set `LINKEDIN_AUTOMATION_RUNTIME_URL` to wherever they've hosted the runtime
-archive, or install it manually per `{baseDir}/README.md` and set
-`LINKEDIN_AUTOMATION_RUNTIME_DIR`.
-
-Once located (or freshly bootstrapped), every command below is:
-`python "<runtime_dir>/cli.py" <subcommand> [args]`.
+Once located, every command below is: `python "<runtime_dir>/cli.py" <subcommand> [args]`.
 
 ## Inputs
 
