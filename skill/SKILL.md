@@ -4,8 +4,9 @@ description: "LinkedIn job-sprint automation — verify/refresh login in the ded
 metadata:
   openclaw:
     primaryEnv: ANTHROPIC_API_KEY
-    expectedRuntimeVersion: "1.0.6"
-    expectedRuntimeSha256: "52c1415688c3e1ab74bda2033c8a83a05b33a061c701da61ae87d71f57387646"
+    expectedRuntimeVersion: "1.0.8"
+    expectedRuntimeSha256: "d71c2e1a5b9049b395d13d1d766b61f5a1f8f25e02600190a4e3370bb70ce350"
+    expectedCliSha256: "b7ce43afce06e31669e6518b856bdb807887e3ba41d32bb975e8e0408eb8ce4d"
     requires:
       env: [ANTHROPIC_API_KEY]
       bins: [python]
@@ -80,34 +81,40 @@ it. Before invoking anything, perform both of these checks at that location, eve
 not just once per session:
 
 1. Read `VERSION` next to `cli.py` and compare it to `expectedRuntimeVersion` in this file's
-   frontmatter (`1.0.6`).
-2. Compute the SHA-256 of `cli.py` itself and compare it to the contents of `CLI.sha256`
-   next to it (written at install time per `{baseDir}/references/README.md`).
+   frontmatter (`1.0.8`).
+2. Compute the SHA-256 of `cli.py` itself and compare it to `expectedCliSha256` in this
+   file's frontmatter (`b7ce43afce06e31669e6518b856bdb807887e3ba41d32bb975e8e0408eb8ce4d`) — **not** to any file sitting next to `cli.py`.
+   A hash generated from whatever `cli.py` happens to be present at install time proves
+   nothing (an attacker who supplies a malicious `cli.py` before that baseline is created
+   can supply a matching sidecar hash too); `expectedCliSha256` is instead computed once at
+   build time from the reviewed source and embedded in this file, so it comes from the same
+   independently-published, reviewed channel as `expectedRuntimeSha256` below, not from the
+   runtime directory being validated.
 
 - **Both match** → use this runtime.
 - **Either is missing, or either doesn't match** → **stop and tell the user**, fail closed.
   Do not proceed anyway, do not silently accept a newer or older runtime, and do not fall
   back to reading the individual `.pyc` files to guess compatibility. Tell them either to
   install the version this skill expects (`{baseDir}/references/README.md`, including its
-  checksum-verification and `CLI.sha256` steps) or that this skill needs to be
-  rebuilt/updated to declare support for the runtime version they have installed.
+  checksum-verification step) or that this skill needs to be rebuilt/updated to declare
+  support for the runtime version they have installed.
 
 Note what each check does and doesn't prove: `VERSION` is a plaintext file the installed
 runtime reports about itself — a match proves it *claims* to be the expected release, not
-that its contents are what was published. `CLI.sha256` closes that gap for `cli.py` itself
-(the file this skill directly executes) by re-verifying its integrity on every invocation,
-not just once at install time — so if `cli.py` is modified after install (by malware, a
-faulty update, etc.), the next invocation catches it rather than silently trusting stale
-`VERSION` text. It still only covers `cli.py`, not every module/dependency the runtime
-imports; the archive-level integrity guarantee for the full runtime is
-`expectedRuntimeSha256` in this file's frontmatter (`52c1415688c3e1ab74bda2033c8a83a05b33a061c701da61ae87d71f57387646`), checked once by
-the user at install time per `{baseDir}/references/README.md` against the downloaded
-archive — compared there against *two* independent copies of the digest (the `.sha256` file
-published next to the archive, and this value embedded in SKILL.md, which is reviewed and
-distributed through a separate channel). If a user reports installing a runtime whose
-archive digest didn't match either published value, treat that as a compromised-supply-chain
-report, not a support request — stop and tell them not to proceed, don't troubleshoot around
-it.
+that its contents are what was published. `expectedCliSha256` re-verifies `cli.py` (the file
+this skill directly executes) against a value pinned in the reviewed skill package itself,
+on every invocation, not just once at install time — so a `cli.py` modified after install
+(by malware, a faulty update, etc.) is caught before it runs, and the expected value can't be
+forged by whoever controls the runtime directory. It still only covers `cli.py`, not every
+module/dependency the runtime imports; the archive-level integrity guarantee for the full
+runtime tree is `expectedRuntimeSha256` in this file's frontmatter (`d71c2e1a5b9049b395d13d1d766b61f5a1f8f25e02600190a4e3370bb70ce350`),
+checked once by the user at install time per `{baseDir}/references/README.md` against the
+downloaded archive — compared there against *two* independent copies of the digest (the
+`.sha256` file published next to the archive, and this value embedded in SKILL.md, which is
+reviewed and distributed through a separate channel). If a user reports installing a runtime
+whose archive digest didn't match either published value, treat that as a
+compromised-supply-chain report, not a support request — stop and tell them not to proceed,
+don't troubleshoot around it.
 
 If no runtime is found at either candidate location at all, **stop and tell the user**.
 Point them at `{baseDir}/references/README.md` for setup, and at
@@ -146,6 +153,11 @@ for the full set. `ANTHROPIC_API_KEY` is required; everything else has a working
    or the scraper found zero candidates).
 
 5. **Run a sprint:**
+   This submits real job applications (and, unless `AUTO_CONNECT_HIRING_TEAM=false`, sends
+   real connection requests) on the user's behalf using an externally distributed runtime
+   this skill package does not contain the source of — get explicit confirmation from the
+   user for this specific invocation before running it (not a one-time blanket "yes" earlier
+   in the conversation), stating how many applications (`N`) will be submitted.
    `python "<runtime_dir>/cli.py" run [N] [--scan-per-page N] [--max-scan N]`
    `N` is the number of applications to submit this call (default 1). Invoke once per
    call — this automation schedules itself externally at randomized intervals and must
