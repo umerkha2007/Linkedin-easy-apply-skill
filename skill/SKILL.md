@@ -4,8 +4,8 @@ description: "LinkedIn job-sprint automation — verify/refresh login in the ded
 metadata:
   openclaw:
     primaryEnv: ANTHROPIC_API_KEY
-    expectedRuntimeVersion: "1.0.9"
-    expectedRuntimeSha256: "ea393746d17a5bea9cc2919ce13ad85ee36822cf21267f7db1e054ac2047e30c"
+    expectedRuntimeVersion: "1.0.10"
+    expectedRuntimeSha256: "0c618ceb3932f743d8f452c9765e99c2f46dc594bc19d5ff3da5fe0e537438db"
     expectedCliSha256: "b7ce43afce06e31669e6518b856bdb807887e3ba41d32bb975e8e0408eb8ce4d"
     requires:
       env: [ANTHROPIC_API_KEY]
@@ -81,7 +81,7 @@ it. Before invoking anything, perform both of these checks at that location, eve
 not just once per session:
 
 1. Read `VERSION` next to `cli.py` and compare it to `expectedRuntimeVersion` in this file's
-   frontmatter (`1.0.9`).
+   frontmatter (`1.0.10`).
 2. Compute the SHA-256 of `cli.py` itself and compare it to `expectedCliSha256` in this
    file's frontmatter (`b7ce43afce06e31669e6518b856bdb807887e3ba41d32bb975e8e0408eb8ce4d`) — **not** to any file sitting next to `cli.py`.
    A hash generated from whatever `cli.py` happens to be present at install time proves
@@ -107,7 +107,7 @@ on every invocation, not just once at install time — so a `cli.py` modified af
 (by malware, a faulty update, etc.) is caught before it runs, and the expected value can't be
 forged by whoever controls the runtime directory. It still only covers `cli.py`, not every
 module/dependency the runtime imports; the archive-level integrity guarantee for the full
-runtime tree is `expectedRuntimeSha256` in this file's frontmatter (`ea393746d17a5bea9cc2919ce13ad85ee36822cf21267f7db1e054ac2047e30c`),
+runtime tree is `expectedRuntimeSha256` in this file's frontmatter (`0c618ceb3932f743d8f452c9765e99c2f46dc594bc19d5ff3da5fe0e537438db`),
 checked once by the user at install time per `{baseDir}/references/README.md` against the
 downloaded archive — compared there against *two* independent copies of the digest (the
 `.sha256` file published next to the archive, and this value embedded in SKILL.md, which is
