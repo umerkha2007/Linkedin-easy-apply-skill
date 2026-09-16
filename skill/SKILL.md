@@ -4,6 +4,8 @@ description: "LinkedIn job-sprint automation — verify/refresh login in the ded
 metadata:
   openclaw:
     primaryEnv: ANTHROPIC_API_KEY
+    expectedRuntimeVersion: "1.0.6"
+    expectedRuntimeSha256: "52c1415688c3e1ab74bda2033c8a83a05b33a061c701da61ae87d71f57387646"
     requires:
       env: [ANTHROPIC_API_KEY]
       bins: [python]
@@ -73,13 +75,46 @@ in this order:
 1. `$LINKEDIN_AUTOMATION_RUNTIME_DIR`, if set.
 2. The default path: `~/.openclaw/workspace/linkedin-automation-runtime/`.
 
-If a runtime exists at either location (a `cli.py` file present there), use it directly.
+A `cli.py` file existing at a candidate location is a shape check, not authorization to run
+it. Before invoking anything, perform both of these checks at that location, every time —
+not just once per session:
 
-If no runtime is found at either location, **stop and tell the user**. Point them at
-`{baseDir}/references/README.md` for setup, and at `LINKEDIN_AUTOMATION_RUNTIME_DIR` to
-tell this skill where they put it (or leave it at the default path above). Do not
-substitute your own approach for locating, obtaining, or standing up the runtime — this
-skill only ever drives an already-prepared installation.
+1. Read `VERSION` next to `cli.py` and compare it to `expectedRuntimeVersion` in this file's
+   frontmatter (`1.0.6`).
+2. Compute the SHA-256 of `cli.py` itself and compare it to the contents of `CLI.sha256`
+   next to it (written at install time per `{baseDir}/references/README.md`).
+
+- **Both match** → use this runtime.
+- **Either is missing, or either doesn't match** → **stop and tell the user**, fail closed.
+  Do not proceed anyway, do not silently accept a newer or older runtime, and do not fall
+  back to reading the individual `.pyc` files to guess compatibility. Tell them either to
+  install the version this skill expects (`{baseDir}/references/README.md`, including its
+  checksum-verification and `CLI.sha256` steps) or that this skill needs to be
+  rebuilt/updated to declare support for the runtime version they have installed.
+
+Note what each check does and doesn't prove: `VERSION` is a plaintext file the installed
+runtime reports about itself — a match proves it *claims* to be the expected release, not
+that its contents are what was published. `CLI.sha256` closes that gap for `cli.py` itself
+(the file this skill directly executes) by re-verifying its integrity on every invocation,
+not just once at install time — so if `cli.py` is modified after install (by malware, a
+faulty update, etc.), the next invocation catches it rather than silently trusting stale
+`VERSION` text. It still only covers `cli.py`, not every module/dependency the runtime
+imports; the archive-level integrity guarantee for the full runtime is
+`expectedRuntimeSha256` in this file's frontmatter (`52c1415688c3e1ab74bda2033c8a83a05b33a061c701da61ae87d71f57387646`), checked once by
+the user at install time per `{baseDir}/references/README.md` against the downloaded
+archive — compared there against *two* independent copies of the digest (the `.sha256` file
+published next to the archive, and this value embedded in SKILL.md, which is reviewed and
+distributed through a separate channel). If a user reports installing a runtime whose
+archive digest didn't match either published value, treat that as a compromised-supply-chain
+report, not a support request — stop and tell them not to proceed, don't troubleshoot around
+it.
+
+If no runtime is found at either candidate location at all, **stop and tell the user**.
+Point them at `{baseDir}/references/README.md` for setup, and at
+`LINKEDIN_AUTOMATION_RUNTIME_DIR` to tell this skill where they put it (or leave it at the
+default path above). Do not substitute your own approach for locating, obtaining, or
+standing up the runtime — this skill only ever drives an already-prepared, version-matched
+installation.
 
 Once located, every command below is: `python "<runtime_dir>/cli.py" <subcommand> [args]`.
 
