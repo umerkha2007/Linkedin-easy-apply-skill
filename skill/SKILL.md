@@ -4,8 +4,8 @@ description: "LinkedIn job-sprint automation — verify/refresh login in the ded
 metadata:
   openclaw:
     primaryEnv: ANTHROPIC_API_KEY
-    expectedRuntimeVersion: "1.0.8"
-    expectedRuntimeSha256: "d71c2e1a5b9049b395d13d1d766b61f5a1f8f25e02600190a4e3370bb70ce350"
+    expectedRuntimeVersion: "1.0.9"
+    expectedRuntimeSha256: "ea393746d17a5bea9cc2919ce13ad85ee36822cf21267f7db1e054ac2047e30c"
     expectedCliSha256: "b7ce43afce06e31669e6518b856bdb807887e3ba41d32bb975e8e0408eb8ce4d"
     requires:
       env: [ANTHROPIC_API_KEY]
@@ -81,7 +81,7 @@ it. Before invoking anything, perform both of these checks at that location, eve
 not just once per session:
 
 1. Read `VERSION` next to `cli.py` and compare it to `expectedRuntimeVersion` in this file's
-   frontmatter (`1.0.8`).
+   frontmatter (`1.0.9`).
 2. Compute the SHA-256 of `cli.py` itself and compare it to `expectedCliSha256` in this
    file's frontmatter (`b7ce43afce06e31669e6518b856bdb807887e3ba41d32bb975e8e0408eb8ce4d`) — **not** to any file sitting next to `cli.py`.
    A hash generated from whatever `cli.py` happens to be present at install time proves
@@ -107,7 +107,7 @@ on every invocation, not just once at install time — so a `cli.py` modified af
 (by malware, a faulty update, etc.) is caught before it runs, and the expected value can't be
 forged by whoever controls the runtime directory. It still only covers `cli.py`, not every
 module/dependency the runtime imports; the archive-level integrity guarantee for the full
-runtime tree is `expectedRuntimeSha256` in this file's frontmatter (`d71c2e1a5b9049b395d13d1d766b61f5a1f8f25e02600190a4e3370bb70ce350`),
+runtime tree is `expectedRuntimeSha256` in this file's frontmatter (`ea393746d17a5bea9cc2919ce13ad85ee36822cf21267f7db1e054ac2047e30c`),
 checked once by the user at install time per `{baseDir}/references/README.md` against the
 downloaded archive — compared there against *two* independent copies of the digest (the
 `.sha256` file published next to the archive, and this value embedded in SKILL.md, which is
@@ -158,10 +158,12 @@ for the full set. `ANTHROPIC_API_KEY` is required; everything else has a working
    this skill package does not contain the source of — get explicit confirmation from the
    user for this specific invocation before running it (not a one-time blanket "yes" earlier
    in the conversation), stating how many applications (`N`) will be submitted.
-   `python "<runtime_dir>/cli.py" run [N] [--scan-per-page N] [--max-scan N]`
-   `N` is the number of applications to submit this call (default 1). Invoke once per
-   call — this automation schedules itself externally at randomized intervals and must
-   not be looped internally, to avoid LinkedIn bot-detection.
+   `python "<runtime_dir>/cli.py" run [N] [--scan-per-page N] [--max-scan N] [--force]`
+   `N` is the number of applications to submit this call (default 1), checked against
+   **today's** successful submissions only (not a lifetime total) — pass `--force` to run
+   anyway if today's target already looks reached. Invoke once per call — this automation
+   schedules itself externally at randomized intervals and must not be looped internally,
+   to avoid LinkedIn bot-detection.
 
 ## Output format
 

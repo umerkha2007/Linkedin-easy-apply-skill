@@ -41,21 +41,28 @@ python cli.py login-check   # fast, no-browser: prints logged_in / needs_login
 python cli.py login         # opens a real Chrome window, waits for manual login (incl. 2FA)
 python cli.py verify        # fresh browser launch, confirms the feed loads
 python cli.py smoke         # live smoke test: login + >=1 Easy Apply candidate found, submits nothing
-python cli.py run [N] [--scan-per-page N] [--max-scan N]   # runs a real Easy Apply sprint
+python cli.py run [N] [--scan-per-page N] [--max-scan N] [--force]   # runs a real Easy Apply sprint
 ```
 
 Same CLI arguments/behavior as running the original `easy_apply.py`/etc. source directly —
 `run` forwards its arguments unchanged to the existing automation's argument parser.
 
+`N` is checked against **today's** successful submissions only, not a lifetime total — running
+`run 60` behaves the same on the first sprint of the day or the fifth. Pass `--force` to run
+anyway even if today's target already looks reached.
+
 ## Config
 
 See `.env.example` for the full list. `ANTHROPIC_API_KEY` is required for AI-answered
 open-ended application questions (grounded in your resume) — without it, those questions
-fall back to generic hardcoded defaults. Real resume/system-prompt text: either paste into
-`RESUME_TEXT`/`SYSTEM_PROMPT_TEXT` env vars, or copy `data/resume.example.txt` →
-`data/resume.txt` and `data/system_prompt.example.txt` → `data/system_prompt.txt` and fill
-them in (gitignored if this folder is under version control — never commit real resume
-content).
+fall back to generic hardcoded defaults. Real resume/system-prompt text: recommended is
+copying `data/resume.example.txt` → `data/resume.txt` and `data/system_prompt.example.txt` →
+`data/system_prompt.txt` and filling them in (gitignored if this folder is under version
+control — never commit real resume content). Alternatively paste directly into the
+`RESUME_TEXT`/`SYSTEM_PROMPT_TEXT` env vars (e.g. an OpenClaw settings textarea with no file
+access) — if you do, wrap the value in double quotes so `python-dotenv` parses the embedded
+newlines correctly; an unquoted multi-line value only has its first line read. Resolution
+order: env var > local file > bundled example.
 
 ## Do NOT
 
