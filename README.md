@@ -9,18 +9,13 @@ runtime that you install once, outside of ClawHub.
 
 ## Setup
 
-The runtime is installed manually, once, before you ever ask the agent to run a sprint —
-this skill never downloads or executes anything itself.
+Install the runtime once, manually, before asking the agent to run a sprint — this skill
+never downloads or executes anything itself.
 
-1. Get the `linkedin-automation-runtime-<version>` archive and its published `.sha256`
-   digest from the maintainer's canonical release source: the GitHub Releases page of this
-   project's repository (the same repository this skill package ships from) — never a
-   third-party mirror, forum link, or unofficial re-upload, even if it claims to host the
-   same archive. Prefer a specific pinned version over "latest" — treat any archive without
-   a published digest, or one obtained from anywhere other than that canonical release page,
-   as untrusted and do not install it.
-2. Verify the archive **before** extracting it — a `cli.py` file existing inside is not
-   itself a trust signal, only a shape check:
+1. **Download** the latest `linkedin-automation-runtime-<version>.zip` and its `.sha256`
+   file from this repo's [GitHub Releases page](https://github.com/umerkha2007/Linkedin-easy-apply-skill/releases).
+   Only use this page — never a mirror, forum link, or re-upload.
+2. **Verify the download** (takes 10 seconds, don't skip it):
    ```
    # Windows
    Get-FileHash linkedin-automation-runtime-<version>.zip -Algorithm SHA256
@@ -28,18 +23,14 @@ this skill never downloads or executes anything itself.
    # macOS / Linux
    sha256sum linkedin-automation-runtime-<version>.zip
    ```
-   Compare that output against **two independent sources**, not just one:
-   - the `.sha256` file published next to the archive, and
-   - `expectedRuntimeSha256` in this skill's own `SKILL.md` frontmatter.
-
-   These two are published through separate channels (the runtime's own distribution point
-   vs. this skill package, reviewed and distributed through ClawHub) — a `.sha256` file
-   sitting beside the archive proves nothing on its own if that whole channel is
-   compromised, since an attacker who can swap the archive can swap the file next to it too.
-   Only trust the archive if it matches **both**. If either doesn't match, stop — do not
-   extract or run anything from that archive, and do not proceed assuming it's a stale-pin
-   issue on the skill's side.
-3. Extract it, then run its installer yourself:
+   The result must match **both** the `.sha256` file next to the download **and** the
+   `expectedRuntimeSha256` value in this skill's `SKILL.md`. If either doesn't match, stop —
+   don't extract or run the archive.
+3. **Extract** the zip, then move/rename the extracted folder to:
+   `~/.openclaw/workspace/linkedin-automation-runtime/`
+   (On Windows that's `%USERPROFILE%\.openclaw\workspace\linkedin-automation-runtime`.)
+   This is the skill's default search path, so you won't need to set any extra variables.
+4. **Run the installer** from inside that folder:
    ```
    # Windows
    pwsh install.ps1
@@ -47,22 +38,21 @@ this skill never downloads or executes anything itself.
    # macOS / Linux
    ./install.sh
    ```
-   This installs the runtime's Python dependencies and the Playwright Chrome browser the
-   automation drives. Review `install.ps1`/`install.sh`/`requirements.txt` yourself before
-   running them if you don't already trust the source you got the archive from.
-4. Either set `LINKEDIN_AUTOMATION_RUNTIME_DIR` to the extracted runtime's path, or move it
-   to `~/.openclaw/workspace/linkedin-automation-runtime/` (the skill's default search
-   path). Use an absolute path you control — not a shared or world-writable directory,
-   and not a symlink to one.
-5. Configure the runtime: copy its `.env.example` to `.env` and set `ANTHROPIC_API_KEY` at
-   minimum. See the runtime's own `README.md` for the full settings reference.
+   This installs the runtime's Python dependencies and the Playwright Chrome browser.
+5. **Configure it**: copy `.env.example` to `.env` in that same folder, then open `.env` and
+   fill in at least `ANTHROPIC_API_KEY` (get one at
+   https://console.anthropic.com/settings/keys). The other variables have sensible
+   defaults — see the comments in `.env.example` for what each one does; only change what
+   you need (e.g. `SEARCH_QUERIES`, `SEARCH_LOCATION`, `CANDIDATE_NAME`, `RESUME_TEXT`).
 
-You do not need to hash `cli.py` yourself — the agent re-verifies it against
-`expectedCliSha256`, a value pinned in this skill's own reviewed `SKILL.md` frontmatter at
-build time, before every invocation. A hash generated locally from whatever `cli.py` is
-present after extraction wouldn't prove anything about that file's origin; pinning it in the
-skill package instead means the expected value comes from a channel the runtime directory
-itself can't influence.
+That's it — the runtime is ready. You do not need to hash `cli.py` yourself; the agent
+re-verifies it automatically against a value pinned in this skill's own `SKILL.md` before
+every run.
+
+6. **Smoke test**: open OpenClaw, start a new session, and ask the agent to run this
+   skill's smoke test (e.g. "run the LinkedIn automation skill's smoke test"). If it fails,
+   report the output to the maintainer as an issue rather than troubleshooting the runtime
+   yourself.
 
 The runtime drives a dedicated Chrome profile (`CHROME_PROFILE_DIR`) that holds your live
 LinkedIn session cookies — treat that profile directory as sensitive, the same as a
